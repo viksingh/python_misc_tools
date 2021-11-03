@@ -1,0 +1,46 @@
+import csv
+import os
+import shutil
+import datetime
+import win32com.client
+
+def getEmail(search_email):
+    try:
+        names = search_email.split(",")
+        print(names[0])
+        print(names[1])
+        outlook = win32com.client.gencache.EnsureDispatch('Outlook.Application')
+        gal = outlook.Session.GetGlobalAddressList()
+        entries = gal.AddressEntries
+        ae = entries[search_email]
+        email_address = None
+
+        if 'EX' == ae.Type:
+            eu = ae.GetExchangeUser()
+            email_address = eu.PrimarySmtpAddress
+
+        if 'SMTP' == ae.Type:
+            email_address = ae.Address
+        
+        return email_address
+    except Exception as e:
+        return ""
+
+now = str(datetime.datetime.now())[:19]
+now = now.replace(":","_")    
+
+
+src_dir='C:\\temp\\pi_contact_list.csv'
+dst_dir='C:\\temp\\pi_contact_list'+str(now)+".csv"
+shutil.copy(src_dir,dst_dir)
+
+with open(dst_dir, 'w', newline='') as outputfile:
+    with open(src_dir, newline='') as readfile:    
+        reader = csv.reader(readfile)
+        writer = csv.writer(outputfile, delimiter=',', quotechar='"')
+        data = list(reader)
+        for row in data:
+            search_string = row[1] + "," + row[0]
+            row.append(getEmail(search_string))
+            writer.writerow(row)
+        
